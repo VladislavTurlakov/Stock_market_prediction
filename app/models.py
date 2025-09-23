@@ -18,11 +18,19 @@ class LSTMModel(nn.Module):
     """
     Модель нейронной сети на основе LSTM для обработки последовательностей.
 
-    Args:
-        input_size: Размер входных признаков.
-        hidden_size: Размер скрытого состояния.
-        num_layers: Количество рекуррентных слоев.
-        output_size: Размер выходного вектора.
+    Input:
+        input_size : int
+            Размер входных признаков.
+        hidden_size : int
+            Размер скрытого состояния.
+        num_layers : int
+            Количество рекуррентных слоев.
+        output_size : int
+            Размер выходного вектора.
+
+    Output:
+        out : torch.Tensor
+            Выход модели размерности, содержащий предсказания для последнего временного шага.
     """
     def __init__(self, input_size, hidden_size, num_layers, output_size):
         super(LSTMModel, self).__init__()
@@ -39,6 +47,26 @@ class LSTMModel(nn.Module):
         return out
 
 def load_data(ticker):
+    """
+    Загружает и подготавливает исторические данные по тикеру из CSV-файла.
+
+    Функция читает CSV с котировками, очищает строки с некорректными датами,
+    преобразует даты в индекс, приводит числовые колонки к float, заполняет
+    пропуски в 'CLOSE' линейной интерполяцией и проверяет наличие необходимых столбцов.
+
+    Input:
+        ticker : str
+            Тикер финансового инструмента.
+
+    Output:
+        pandas.DataFrame
+            Подготовленный DataFrame:
+            - Индекс: столбец `TRADEDATE` (datetime, отсортированный).
+            - Числовые колонки приведены к float.
+            - Пропуски в `CLOSE` заполнены интерполяцией.
+    """
+
+    # Формируем путь к CSV-файлу по тикеру
     file_path = os.path.join(DATA_DIR, f'{ticker}.csv')
 
     try:
@@ -82,7 +110,11 @@ def load_data(ticker):
             missing = required_columns - set(df.columns)
             raise Exception(f"Отсутствуют необходимые столбцы: {missing}")
 
-        logging.info(f"DataFrame загружен. Размер: {df.shape}, Диапазон дат: {df.index.min()} до {df.index.max()}")
+        # Финальный лог: размер таблицы и диапазон дат
+        logging.info(
+            f"DataFrame загружен. Размер: {df.shape}, "
+            f"Диапазон дат: {df.index.min()} до {df.index.max()}"
+        )
         return df
 
     except Exception as e:
@@ -90,6 +122,20 @@ def load_data(ticker):
         raise Exception(f"Ошибка при загрузке данных для {ticker}: {str(e)}")
 
 def create_dataset(data, time_step=1):
+    """
+    Формирует обучающий датасет для временного ряда.
+
+    Input:
+        data : numpy.ndarray
+            Массив данных.
+        time_step : int, optional
+            Количество предыдущих шагов, используемых для предсказания следующего значения.
+
+    Output:
+        tuple of numpy.ndarray
+            X — массив входных последовательностей формы (n_samples, time_step).
+            Y — массив целевых значений формы (n_samples,).
+    """
     X, Y = [], []
     for i in range(len(data) - time_step - 1):
         a = data[i:(i + time_step), 0]
@@ -99,6 +145,24 @@ def create_dataset(data, time_step=1):
     return np.array(X), np.array(Y)
 
 def train_model(ticker, save_dir='models'):
+    """
+    Обучает LSTM-модель прогнозирования цен по тикеру и сохраняет результаты.
+
+    Функция загружает данные по тикеру, выполняет нормализацию и формирование выборки,
+    обучает модель LSTM на временных рядах, сохраняет обученную модель, скейлер и график потерь.
+
+    Input:
+        ticker : str
+            Тикер финансового инструмента.
+        save_dir : str, optional
+            Папка для сохранения модели, скейлера и графика потерь.
+
+    Output:
+        model : torch.nn.Module
+            Обученная LSTM-модель.
+        scaler : sklearn.preprocessing.MinMaxScaler
+            Скалер для обратного преобразования предсказаний.
+    """
     df = load_data(ticker)
     df = df[['CLOSE']]
 
@@ -202,6 +266,24 @@ def train_model(ticker, save_dir='models'):
     return model, scaler
 
 def predict_stock_price(model, scaler, data):
+    """
+    Делает предсказание цены акции с помощью обученной LSTM-модели.
+
+    Функция нормализует данные, использует последние 60 наблюдений,
+    подаёт их в модель и возвращает восстановленное предсказание в исходном масштабе.
+
+    Input:
+        model : torch.nn.Module
+            Обученная LSTM-модель.
+        scaler : sklearn.preprocessing.MinMaxScaler
+            Скалер, использованный при обучении для нормализации данных.
+        data : numpy.ndarray
+            Исходные данные временного ряда (двумерный массив с ценами).
+
+    Output:
+        predicted_price[0][0] : float
+            Предсказанная цена акции в исходном масштабе.
+    """
     model.eval()
     with torch.no_grad():
         # Нормализация данных
@@ -216,13 +298,25 @@ def predict_stock_price(model, scaler, data):
 
 def predict_future_prices(model, scaler, initial_data, steps=30):
     """
-    Предсказывает будущие цены на заданное количество дней вперед
+    Предсказывает будущие цены на несколько дней вперёд с помощью обученной LSTM-модели.
 
-    Args:
-        model: обученная модель LSTM
-        scaler: нормализатор данных
-        initial_data: исходные данные (последние 60 дней)
-        steps: количество дней для предсказания
+    На вход подаются последние 60 дней данных, модель поочередно предсказывает
+    следующие значения, и каждое новое предсказание добавляется в последовательность
+    для дальнейшего прогноза.
+
+    Input:
+        model : torch.nn.Module
+            Обученная LSTM-модель.
+        scaler : sklearn.preprocessing.MinMaxScaler
+            Скалер, использованный при обучении для нормализации данных.
+        initial_data : numpy.ndarray
+            Исходные данные (двумерный массив, содержащий последние 60 дней цен).
+        steps : int, optional
+            Количество дней для предсказания (по умолчанию 30).
+
+    Output:
+        future_predictions: list[float]
+            Список предсказанных цен на заданное количество шагов вперёд.
     """
     model.eval()
     future_predictions = []
@@ -250,5 +344,3 @@ def predict_future_prices(model, scaler, initial_data, steps=30):
             current_sequence = np.append(current_sequence[1:], [[prediction_price]], axis=0)
 
     return future_predictions
-
-

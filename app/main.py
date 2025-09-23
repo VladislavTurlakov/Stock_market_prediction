@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from .routes import router as prediction_router
 
+# Создаем экземпляр приложения FastAPI
 app = FastAPI()
 
 # Подключаем статические файлы
@@ -20,6 +21,7 @@ app.include_router(prediction_router, prefix="/api", tags=["predictions"])
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+# Запуск приложения через ASGI-сервер
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

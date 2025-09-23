@@ -10,6 +10,23 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data', 'moex_data')
 
 def download_data(ticker, start_date=None, end_date=None, max_retries=3):
+    """
+    Загружает исторические данные по акции с сайта Московской биржи (MOEX) и сохраняет их в локальный CSV-файл.
+
+    Input:
+        ticker : str
+            Биржевой тикер.
+        start_date : str
+            Начальная дата выборки в формате 'YYYY-MM-DD'.
+        end_date : str
+            Конечная дата выборки в формате 'YYYY-MM-DD'.
+        max_retries : int
+            Максимальное количество попыток загрузки (по умолчанию 3).
+
+    Output:
+        df : pd.DataFrame
+            Таблица с историческими данными по тикеру.
+    """
     base_url = f'https://iss.moex.com/iss/history/engines/stock/markets/shares/boards/TQBR/securities/{ticker}.csv'
     all_data = []
     start = 0
@@ -27,7 +44,7 @@ def download_data(ticker, start_date=None, end_date=None, max_retries=3):
                 if end_date:
                     params['till'] = end_date
 
-                response = requests.get(base_url, params=params)
+                response = requests.get(base_url, params=params)  # Запрос к API
                 if response.status_code != 200:
                     raise Exception(f"HTTP ошибка {response.status_code}: {response.text}")
 
@@ -45,9 +62,10 @@ def download_data(ticker, start_date=None, end_date=None, max_retries=3):
                         data_end = i
                         break
 
+                # Если данных нет — прерываем
                 if data_start is None:
                     logging.info("Заголовок данных не найден. Прерываем цикл.")
-                    break  # Нет данных
+                    break
 
                 # Извлекаем данные
                 data_lines = lines[data_start:data_end]
@@ -72,6 +90,7 @@ def download_data(ticker, start_date=None, end_date=None, max_retries=3):
                 start += batch_size
                 time.sleep(0.5)  # Задержка между запросами
 
+            # Если ничего не скачали
             if not all_data:
                 raise Exception(f"Данные для {ticker} не найдены")
 
@@ -97,6 +116,19 @@ def download_data(ticker, start_date=None, end_date=None, max_retries=3):
 
 @lru_cache(maxsize=32)
 def load_data(ticker):
+    """
+    Загружает и обрабатывает локальные данные по тикеру с Московской биржи (MOEX).
+
+    Input:
+        ticker : str
+            Биржевой тикер.
+
+    Output:
+        df : pd.DataFrame
+            DataFrame с обработанными данными, где:
+                индекс : `TRADEDATE` (datetime),
+                столбцы : котировки и метаданные (например, 'OPEN', 'CLOSE', 'VOLUME').
+    """
     file_path = os.path.join(DATA_DIR, f'{ticker}.csv')
 
     try:
