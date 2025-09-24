@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from .models import LSTMModel, load_data, train_model, predict_stock_price, predict_future_prices
 from .utils import download_data
 import torch
-import numpy as np
 import pandas as pd
 import os
 import logging
@@ -255,6 +254,7 @@ async def get_min_date(ticker: str):
     try:
         # Загружаем данные по тикеру
         df = load_data(ticker)
+
         # Подготавливаем датасет (оставляем только CLOSE)
         df, _ = prepare_dataset(df)
 

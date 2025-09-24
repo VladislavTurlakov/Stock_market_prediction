@@ -182,7 +182,6 @@ def train_model(ticker, save_dir='models'):
 
     time_step = 60
     X, Y = create_dataset(dataset, time_step)
-
     X = X.reshape(X.shape[0], X.shape[1], 1)
 
     train_size = int(len(X) * 0.8)
