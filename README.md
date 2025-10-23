@@ -1,1 +1,2 @@
-This project was implemented as a diploma thesis in 2025 at the Moscow Aviation Institute.
+Данный проект был реализован в качестве дипломной работы в 2025 году в Московском авиационном институте.
+
