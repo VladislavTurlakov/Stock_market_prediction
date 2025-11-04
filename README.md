@@ -21,11 +21,11 @@
     
 **Инструкция по использованию приложения**  
 Перед началом работы необходимо установить все необходимые библиотеки и зависимости. Это можно сделать, выполнив команду:  
-    pip install -r requirements.txt  
+    <pre>pip install -r requirements.txt</pre>
 Для запуска FastAPI-приложения выполните cледующие команды в корне проекта:  
-    source venv/bin/activate  
-    uvicorn app.main:app –reload  
+    <pre>source venv/bin/activate  
+    uvicorn app.main:app –reload</pre>
 После этого приложение будет доступно по адресу:  
-    http://127.0.0.1:8000   
+    <pre>http://127.0.0.1:8000</pre>
 При успешном старте в терминале будет отображено сообщение:    
-INFO: Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+<pre>INFO: Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</pre>
