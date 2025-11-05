@@ -16,10 +16,9 @@
 
 **Интерфейс приложения**  
   
-<img width="799" height="573" alt="изображение" src="https://github.com/user-attachments/assets/255369dc-a870-41ed-aa1f-253ff18e9a87" />
+<img width="799" height="573" alt="изображение" src="https://github.com/user-attachments/assets/255369dc-a870-41ed-aa1f-253ff18e9a87" />  
 
-    
-**Инструкция по использованию приложения**  
+**Инструкция по запуску приложения**  
 Перед началом работы необходимо установить все необходимые библиотеки и зависимости. Это можно сделать, выполнив команду:  
     <pre>pip install -r requirements.txt</pre>
 Для запуска FastAPI-приложения выполните cледующие команды в корне проекта:  
@@ -29,3 +28,4 @@
     <pre>http://127.0.0.1:8000</pre>
 При успешном старте в терминале будет отображено сообщение:    
 <pre>INFO: Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</pre>
+
